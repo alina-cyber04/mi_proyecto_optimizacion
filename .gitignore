@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+.vscode/
+.ipynb_checkpoints/
+*.py[cod]
+env/
+venv/
+ENV/
+data/resultados/
