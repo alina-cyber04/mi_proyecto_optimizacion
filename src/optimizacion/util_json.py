@@ -66,7 +66,16 @@ def create_metadata(objective_function: str, algorithms: list, author: str) -> d
 	}
 	return metadata
 
-def run_and_save_experiments(run_configs: list, algorithm_fn_map: dict, filename: str, f, grad):
+def run_and_save_experiments(run_configs: list, algorithm_fn_map: dict, filename: str, f, grad, mesh_metadata=None):
+	"""
+	Ejecuta experimentos y guarda resultados en JSON.
+	
+	Parámetros adicionales:
+	-----------------------
+	mesh_metadata : dict, opcional
+		Diccionario que mapea índices de puntos a metadata de malla.
+		Formato: {point_idx: {'mesh_id': int, 'mesh_name': str, 'distance_to_opt': float}}
+	"""
 	experiment_data = {
 		"metadata": create_metadata(
 			objective_function="f(x,y) = y^2 + log(1 + x^2)",
@@ -100,6 +109,14 @@ def run_and_save_experiments(run_configs: list, algorithm_fn_map: dict, filename
 			"line_search": cfg.get("line_search"),
 			"maxiter": cfg.get("maxiter", None)
 		}
+		
+		# Agregar metadata de malla si está disponible
+		if mesh_metadata is not None and cfg.get('point_idx') is not None:
+			point_idx = cfg.get('point_idx')
+			if point_idx in mesh_metadata:
+				params['mesh_id'] = mesh_metadata[point_idx]['mesh_id']
+				params['mesh_name'] = mesh_metadata[point_idx]['mesh_name']
+				params['distance_to_opt'] = mesh_metadata[point_idx]['distance_to_opt']
 	
 		x_val = result.get("x", None)
 		if x_val is None:

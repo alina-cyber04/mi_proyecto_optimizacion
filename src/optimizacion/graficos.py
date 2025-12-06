@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import hashlib
 from collections import OrderedDict
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def _plot_convergence_single(experiments, ax_f, ax_grad, log_scale=True,
@@ -410,10 +411,16 @@ def plot_trajectory_2d(experiment, filename='trajectory.png', objective_fn=None,
     ax.plot(end[0], end[1], '*', color=final_color, markersize=15, markeredgecolor='k', markeredgewidth=1.5, 
             label=f'Final x*=[{end[0]:.4f}, {end[1]:.4f}]', zorder=5)
     ax.plot(0, 0, 'kx', markersize=15, markeredgewidth=3, label='Óptimo teórico', zorder=5)
-    exp_id = experiment.get('id') or experiment.get('parameters', {}).get('algorithm') or '?'
+    
+    # Obtener nombre del algoritmo y formatearlo
+    alg = experiment.get('parameters', {}).get('algorithm', '?')
+    alg_display_map = {'gd': 'GD-Armijo', 'bfgs': 'BFGS'}
+    alg_name = alg_display_map.get(alg, alg.upper())
+    x0 = experiment.get('parameters', {}).get('x0', [])
+    
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
-    ax.set_title(f"Trayectoria optimizador – Exp {exp_id}")
+    ax.set_title(f"Trayectoria {alg_name} desde {[round(float(v), 2) for v in x0]}")
     ax.legend(loc='best', fontsize=9)
     ax.grid(True, alpha=0.3)
     
@@ -434,4 +441,84 @@ def plot_trajectory_2d(experiment, filename='trajectory.png', objective_fn=None,
     plt.tight_layout()
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     print(f"Gráfica guardada: {filename}")
+    plt.show()
+
+
+def plot_function_3d(f, x_range=(-10, 10), y_range=(-10, 10), filename='function_3d.png', resolution=100):
+    """
+    Genera una visualización 3D de la función objetivo f(x, y).
+    
+    Parámetros:
+    -----------
+    f : callable
+        Función objetivo que acepta array [x, y] y retorna escalar.
+    x_range : tuple
+        Rango de valores para x: (x_min, x_max).
+    y_range : tuple
+        Rango de valores para y: (y_min, y_max).
+    filename : str
+        Nombre del archivo PNG de salida.
+    resolution : int
+        Número de puntos en cada dirección para la malla.
+    """
+    # Crear malla de evaluación
+    x = np.linspace(x_range[0], x_range[1], resolution)
+    y = np.linspace(y_range[0], y_range[1], resolution)
+    X, Y = np.meshgrid(x, y)
+    
+    # Evaluar función en la malla
+    Z = np.zeros_like(X)
+    for i in range(X.shape[0]):
+        for j in range(X.shape[1]):
+            try:
+                Z[i, j] = f([X[i, j], Y[i, j]])
+            except:
+                Z[i, j] = np.nan
+    
+    # Crear figura 3D
+    fig = plt.figure(figsize=(14, 6))
+    
+    # Subplot 1: Vista 3D con superficie
+    ax1 = fig.add_subplot(121, projection='3d')
+    surf = ax1.plot_surface(X, Y, Z, cmap='viridis', alpha=0.9, 
+                            edgecolor='none', linewidth=0, antialiased=True)
+    
+    # Marcar el óptimo global
+    ax1.scatter([0], [0], [0], color='red', s=100, marker='*', 
+                edgecolors='black', linewidths=2, label='Óptimo $(0,0,0)$', zorder=5)
+    
+    ax1.set_xlabel('$x$', fontsize=12)
+    ax1.set_ylabel('$y$', fontsize=12)
+    ax1.set_zlabel('$f(x,y)$', fontsize=12)
+    ax1.set_title('Superficie de $f(x,y) = y^2 + \log(1+x^2)$', fontsize=13, pad=20)
+    ax1.view_init(elev=25, azim=45)
+    ax1.legend(loc='upper left', fontsize=10)
+    
+    # Añadir barra de color
+    fig.colorbar(surf, ax=ax1, shrink=0.5, aspect=10, pad=0.1)
+    
+    # Subplot 2: Curvas de nivel (vista superior)
+    ax2 = fig.add_subplot(122)
+    levels = np.linspace(np.nanmin(Z), np.nanmin(Z) + 50, 30)
+    contour = ax2.contour(X, Y, Z, levels=levels, cmap='viridis', linewidths=1.2)
+    ax2.clabel(contour, inline=True, fontsize=8, fmt='%.1f')
+    
+    # Rellenar con colores
+    contourf = ax2.contourf(X, Y, Z, levels=levels, cmap='viridis', alpha=0.6)
+    fig.colorbar(contourf, ax=ax2, label='$f(x,y)$')
+    
+    # Marcar óptimo
+    ax2.plot(0, 0, 'r*', markersize=15, markeredgecolor='black', 
+             markeredgewidth=2, label='Óptimo $(0,0)$', zorder=5)
+    
+    ax2.set_xlabel('$x$', fontsize=12)
+    ax2.set_ylabel('$y$', fontsize=12)
+    ax2.set_title('Curvas de nivel de $f(x,y)$', fontsize=13)
+    ax2.legend(loc='upper right', fontsize=10)
+    ax2.grid(True, alpha=0.3)
+    ax2.set_aspect('equal', adjustable='box')
+    
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches='tight')
+    print(f"Gráfica 3D guardada: {filename}")
     plt.show()

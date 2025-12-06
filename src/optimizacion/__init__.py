@@ -7,7 +7,7 @@ from .line_search import backtracking_armijo
 from .descent import gradient_descent_armijo
 from .bfgs import bfgs
 from .util_json import serialize_experiment_to_json, load_experiments_from_json
-from .graficos import plot_convergence, plot_final_vs_iters, plot_trajectory_2d
+from .graficos import plot_convergence, plot_final_vs_iters, plot_trajectory_2d, plot_function_3d
 
 __all__ = [
     "backtracking_armijo",
@@ -18,4 +18,5 @@ __all__ = [
     "plot_convergence",
     "plot_final_vs_iters",
     "plot_trajectory_2d",
+    "plot_function_3d",
 ]
